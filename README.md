@@ -26,7 +26,7 @@ namespace MyApp
             _notionService = notionService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task&lt;IActionResult&gt; Index()
         {
             Response.Headers.Add("Content-Disposition", "attachment");
             Response.Headers.Add("X-Content-Type-Options", "nosniff");

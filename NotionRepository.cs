@@ -44,7 +44,9 @@ namespace Notion
                     localEndpoint = $"{endpoint}?start_cursor={startCursor}";
                     Thread.Sleep(500);
                 }
-                var response = _httpClient.PostAsync(localEndpoint, new StringContent(query, Encoding.UTF8, "application/json"));
+
+                var response = _httpClient.PostAsync(localEndpoint,
+                    new StringContent(query, Encoding.UTF8, "application/json"));
                 var result =
                     JsonConvert.DeserializeObject<QueryResponse>(await response.Result.Content.ReadAsStringAsync());
                 resultItems.AddRange(result.Results);

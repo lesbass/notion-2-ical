@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Notion.Interfaces;
+using Notion.Models;
 
 namespace Notion
 {
     public class NotionService : INotionService
     {
-        private readonly INotionRepository _notionRepository;
         private const string BaseNotionUrl = "https://www.notion.so/";
+        private readonly INotionRepository _notionRepository;
 
         public NotionService(INotionRepository notionRepository)
         {
@@ -18,51 +18,55 @@ namespace Notion
 
         public async Task<string> GetVCalendarData()
         {
-            var sb = new StringBuilder();
-            sb.Append("BEGIN:VCALENDAR");
-            sb.Append("\r\nVERSION:2.0");
-            sb.Append("\r\nNAME:Notion Tasks");
-            sb.Append("\r\nX-WR-CALNAM:Notion Tasks");
-            sb.Append("\r\nMETHOD:PUBLISH");
+            var calendar = new VCalendar("Notion Tasks");
 
-            var tasks = await _notionRepository.GetTodoTasks();
+            (await _notionRepository.GetTodoTasks()).ForEach(task =>
+                {
+                    try
+                    {
+                        calendar.AddEvent(GetTaskEvent(task));
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+            );
+
+            return calendar.ToString();
+        }
+
+
+        private VEvent GetTaskEvent(Result task)
+        {
             var dateFormat = "yyyyMMddTHHmmssZ";
-            foreach (var task in tasks)
-            {
-                var itemId = task.Id;
-                var itemUrl = $"{BaseNotionUrl}{itemId.Replace("-", "")}";
-                var dueDate = DateTime.Parse(task.Properties.Due.date.start);
-                var hasHours = dueDate.Hour > 0;
-                if(dueDate < DateTime.Now) dueDate = DateTime.Now.Date;
 
-                var start = hasHours
-                    ? "DTSTART:" + dueDate.ToUniversalTime().ToString(dateFormat)
-                    : $"DTSTART;VALUE=DATE:{dueDate:yyyyMMdd}";
-                var end = hasHours
-                    ? "DTEND:" + dueDate.AddHours(1).ToUniversalTime().ToString(dateFormat)
-                    : $"DTEND;VALUE=DATE:{dueDate.AddDays(1):yyyyMMdd}";
+            var itemId = task.Id;
+            var itemUrl = $"{BaseNotionUrl}{itemId.Replace("-", "")}";
+            var dueDate = DateTime.Parse(task.Properties.Due.Date.Start);
+            var hasHours = dueDate.Hour > 0;
+            if (dueDate < DateTime.Now) dueDate = DateTime.Now.Date;
 
-                var title =
-                    $"{task.Properties.Priority.formula.@string} {task.Properties.Name.title.FirstOrDefault()?.text.content}";
+            var start = hasHours
+                ? "DTSTART:" + dueDate.ToUniversalTime().ToString(dateFormat)
+                : $"DTSTART;VALUE=DATE:{dueDate:yyyyMMdd}";
+            var end = hasHours
+                ? "DTEND:" + dueDate.AddHours(1).ToUniversalTime().ToString(dateFormat)
+                : $"DTEND;VALUE=DATE:{dueDate.AddDays(1):yyyyMMdd}";
 
-                var description = $"Url: {itemUrl}";
+            var title =
+                $"{task.Properties.Priority.Formula.StringValue} {task.Properties.Name.Title.FirstOrDefault()?.Text.Content}";
 
-                sb.Append("\r\nBEGIN:VEVENT");
-                sb.Append($"\r\n{start}");
-                sb.Append($"\r\n{end}");
-                sb.Append($"\r\nUID:{itemId}");
-                sb.Append($"\r\nURL:{itemUrl}");
-                sb.Append($"\r\nDTSTAMP:{DateTime.Now.ToUniversalTime().ToString(dateFormat)}");
-                sb.Append($"\r\nSUMMARY:{title}");
-                sb.Append($"\r\nDESCRIPTION:{description}");
-                sb.Append("\r\nPRIORITY:5");
-                sb.Append("\r\nCLASS:PUBLIC");
-                sb.Append("\r\nEND:VEVENT");
-            }
+            var description = $"Url: {itemUrl}";
 
-            sb.Append("\r\nEND:VCALENDAR");
-
-            return sb.ToString();
+            return new VEvent
+            (
+                start,
+                end,
+                title,
+                description,
+                itemUrl
+            );
         }
     }
 }

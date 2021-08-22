@@ -1,5 +1,5 @@
 # notion-2-ical
-This is a small class library intended to be used with a web api/website in order to expose an iCal feed to be imported in apps such as Google Calendar or Microsoft Outlook.
+.NET Standard class library intended to be used with a web api/website in order to expose an iCal feed to be imported in apps such as Google Calendar or Microsoft Outlook.
 It maps the way I arranged the structure of my task items in Notion, so it should be adapted based on your specific way of using Notion.
 
 ## API Reference

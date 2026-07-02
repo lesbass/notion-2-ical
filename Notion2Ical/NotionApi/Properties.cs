@@ -1,35 +1,40 @@
-﻿using Newtonsoft.Json;
+﻿namespace Notion2Ical.NotionApi;
 
-namespace Notion.Models
+public class Properties
 {
-    public class Properties
+    [JsonPropertyName("Due Date")]
+    public DueDate? Due { get; set; }
+
+    [JsonPropertyName("Priority")]
+    public Todo? Priority { get; set; }
+
+    [JsonPropertyName("Name")]
+    public Name? Name { get; set; }
+
+    public class Todo
     {
-        [JsonProperty("Due Date")] public DueDate Due { get; set; }
+        [JsonPropertyName("formula")]
+        public ItemFormula? Formula { get; set; }
 
-        [JsonProperty("Priority")] public Todo Priority { get; set; }
-
-        [JsonProperty("Name")] public Name Name { get; set; }
-
-        public class Todo
+        public class ItemFormula
         {
-            [JsonProperty("formula")] public ItemFormula Formula { get; set; }
-
-            public class ItemFormula
-            {
-                [JsonProperty("string")] public string StringValue { get; set; }
-            }
+            [JsonPropertyName("string")]
+            public string? StringValue { get; set; }
         }
+    }
 
-        public class DueDate
+    public class DueDate
+    {
+        [JsonPropertyName("date")]
+        public ItemDate? Date { get; set; }
+
+        public class ItemDate
         {
-            [JsonProperty("date")] public ItemDate Date { get; set; }
+            [JsonPropertyName("start")]
+            public string? Start { get; set; }
 
-            public class ItemDate
-            {
-                [JsonProperty("start")] public string Start { get; set; }
-
-                [JsonProperty("end")] public string End { get; set; }
-            }
+            [JsonPropertyName("end")]
+            public string? End { get; set; }
         }
     }
 }

@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿namespace Notion2Ical.NotionApi;
 
-namespace Notion.Models
+public class QueryResponse
 {
-    public class QueryResponse
-    {
-        [JsonProperty("results")] public List<Result> Results { get; set; }
+    [JsonPropertyName("results")]
+    public List<Result>? Results { get; set; }
 
-        [JsonProperty("has_more")] public bool HasMore { get; set; }
+    [JsonPropertyName("has_more")]
+    public bool HasMore { get; set; }
 
-        [JsonProperty("next_cursor")] public string NextCursor { get; set; }
-    }
+    [JsonPropertyName("next_cursor")]
+    public string? NextCursor { get; set; }
 }

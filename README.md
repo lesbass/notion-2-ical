@@ -1,6 +1,6 @@
 # notion-2-ical
 
-.NET Standard library that turns a Notion task database into an iCalendar feed.
+.NET 10 library that turns a Notion task database into an iCalendar feed.
 
 The feed can be exposed by an ASP.NET application and subscribed from calendar
 apps such as Google Calendar, Outlook, Apple Calendar, or any client that reads
@@ -35,7 +35,13 @@ The current models expect these properties:
 | `Status` | Select | Used to hide completed tasks |
 
 `Status` and the done value can be customized through `NotionCalendarOptions`.
-The other property names are currently mapped in the model classes.
+The other property names are currently mapped in the Notion API DTOs.
+
+## Project layout
+
+- `Notion2Ical/NotionApi`: DTOs for data returned by the Notion API.
+- `Notion2Ical/ICalendar`: models used to generate the iCalendar output.
+- `Notion2Ical.Tests`: unit tests.
 
 ## Configuration
 
@@ -55,15 +61,12 @@ var options = new NotionCalendarOptions
 ## ASP.NET Core setup
 
 ```csharp
-services.AddSingleton(new NotionCalendarOptions
+services.AddNotionCalendarFeed(new NotionCalendarOptions
 {
     AccessToken = Configuration["Notion:AccessToken"],
     DatabaseId = Configuration["Notion:DatabaseId"],
     CalendarName = "Notion Tasks"
 });
-
-services.AddHttpClient<INotionRepository, NotionRepository>();
-services.AddTransient<INotionService, NotionService>();
 ```
 
 ## Controller example
@@ -72,7 +75,7 @@ services.AddTransient<INotionService, NotionService>();
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Notion.Interfaces;
+using Notion2Ical.Interfaces;
 
 namespace MyApp
 {
@@ -103,3 +106,12 @@ namespace MyApp
 - Database query API: https://developers.notion.com/reference/post-database-query
 
 The repository sends `Notion-Version: 2022-06-28` by default.
+
+## CI and package
+
+The GitHub Actions workflow restores, builds, tests, and packs the library on
+every push and pull request. The generated NuGet package is uploaded as a build
+artifact.
+
+Publishing to nuget.org is free, but it needs a `NUGET_API_KEY` repository
+secret and should usually run only from version tags or releases.

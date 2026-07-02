@@ -1,12 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Notion.Models;
+﻿namespace Notion2Ical.Interfaces;
 
-namespace Notion.Interfaces
+public interface INotionRepository
 {
-    public interface INotionRepository
-    {
-        Task<IReadOnlyList<Result>> GetTodoTasks(CancellationToken cancellationToken = default(CancellationToken));
-    }
+    Task<IReadOnlyList<Result>> GetTodoTasks(CancellationToken cancellationToken = default);
 }

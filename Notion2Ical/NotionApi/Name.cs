@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿namespace Notion2Ical.NotionApi;
 
-namespace Notion.Models
+public class Name
 {
-    public class Name
+    [JsonPropertyName("title")]
+    public List<ItemTitle>? Title { get; set; }
+
+    public class ItemTitle
     {
-        [JsonProperty("title")] public List<ItemTitle> Title { get; set; }
+        [JsonPropertyName("text")]
+        public ItemText? Text { get; set; }
 
-        public class ItemTitle
+        public class ItemText
         {
-            [JsonProperty("text")] public ItemText Text { get; set; }
-
-            public class ItemText
-            {
-                [JsonProperty("content")] public string Content { get; set; }
-            }
+            [JsonPropertyName("content")]
+            public string? Content { get; set; }
         }
     }
 }

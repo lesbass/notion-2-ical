@@ -1,5 +1,7 @@
 # notion-2-ical
 
+[![Release](https://github.com/lesbass/notion-2-ical/actions/workflows/release.yml/badge.svg)](https://github.com/lesbass/notion-2-ical/actions/workflows/release.yml)
+
 .NET 10 library that turns a Notion task database into an iCalendar feed.
 
 The feed can be exposed by an ASP.NET application and subscribed from calendar

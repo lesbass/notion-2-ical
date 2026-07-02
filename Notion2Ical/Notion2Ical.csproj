@@ -8,6 +8,7 @@
     <Version>0.1.0</Version>
     <Authors>notion-2-ical contributors</Authors>
     <Description>Turns a Notion task database into an iCalendar feed.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 

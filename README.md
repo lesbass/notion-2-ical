@@ -120,3 +120,7 @@ The release workflow publishes to nuget.org only from `v*` tags whose commit is
 contained in `master`. Publishing uses NuGet Trusted Publishing with the GitHub
 environment `nuget`; configure the nuget.org policy with `release.yml` and
 environment `nuget`.
+
+## License
+
+MIT

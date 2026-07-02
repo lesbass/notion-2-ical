@@ -1,6 +1,6 @@
-﻿namespace Notion2Ical;
+﻿namespace Notion2Ical.Concretes;
 
-public class NotionService : INotionService
+internal class NotionService : INotionService
 {
     private readonly INotionRepository _notionRepository;
     private readonly NotionCalendarOptions _options;

@@ -1,6 +1,6 @@
 ﻿namespace Notion2Ical.NotionApi;
 
-public class Properties
+internal class Properties
 {
     [JsonPropertyName("Due Date")]
     public DueDate? Due { get; set; }

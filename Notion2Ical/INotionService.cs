@@ -1,4 +1,4 @@
-﻿namespace Notion2Ical.Interfaces;
+﻿namespace Notion2Ical;
 
 public interface INotionService
 {

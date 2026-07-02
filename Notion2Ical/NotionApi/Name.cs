@@ -1,6 +1,6 @@
 ﻿namespace Notion2Ical.NotionApi;
 
-public class Name
+internal class Name
 {
     [JsonPropertyName("title")]
     public List<ItemTitle>? Title { get; set; }

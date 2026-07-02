@@ -1,6 +1,6 @@
 ﻿namespace Notion2Ical.ICalendar;
 
-public class VEvent
+internal class VEvent
 {
     private const string DateTimeFormat = "yyyyMMddTHHmmssZ";
 

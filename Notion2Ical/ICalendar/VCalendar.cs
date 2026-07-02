@@ -1,6 +1,6 @@
 ﻿namespace Notion2Ical.ICalendar;
 
-public class VCalendar
+internal class VCalendar
 {
     private readonly List<VEvent> _events = [];
     private readonly string _name;

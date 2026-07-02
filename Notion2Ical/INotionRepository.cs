@@ -1,6 +1,6 @@
-﻿namespace Notion2Ical.Interfaces;
+﻿namespace Notion2Ical;
 
-public interface INotionRepository
+internal interface INotionRepository
 {
     Task<IReadOnlyList<Result>> GetTodoTasks(CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,6 @@
 ﻿namespace Notion2Ical.NotionApi;
 
-public class QueryResponse
+internal class QueryResponse
 {
     [JsonPropertyName("results")]
     public List<Result>? Results { get; set; }

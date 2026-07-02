@@ -41,6 +41,8 @@ The other property names are currently mapped in the Notion API DTOs.
 
 - `Notion2Ical/NotionApi`: DTOs for data returned by the Notion API.
 - `Notion2Ical/ICalendar`: models used to generate the iCalendar output.
+- `Notion2Ical/Concretes`: internal implementations for repository and service contracts.
+- `Notion2Ical/INotionService.cs`: public service contract consumed by applications.
 - `Notion2Ical.Tests`: unit tests.
 
 ## Configuration
@@ -75,7 +77,7 @@ services.AddNotionCalendarFeed(new NotionCalendarOptions
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Notion2Ical.Interfaces;
+using Notion2Ical;
 
 namespace MyApp
 {
@@ -109,9 +111,10 @@ The repository sends `Notion-Version: 2022-06-28` by default.
 
 ## CI and package
 
-The GitHub Actions workflow restores, builds, tests, and packs the library on
-every push and pull request. The generated NuGet package is uploaded as a build
-artifact.
+The CI workflow restores, builds, tests, and packs the library on every push and
+pull request. The generated NuGet package is uploaded as a build artifact.
 
-Publishing to nuget.org is free, but it needs a `NUGET_API_KEY` repository
-secret and should usually run only from version tags or releases.
+The release workflow publishes to nuget.org only from `v*` tags whose commit is
+contained in `main`. Publishing uses NuGet Trusted Publishing with the GitHub
+environment `nuget`; configure the nuget.org policy with `release.yml` and
+environment `nuget`.

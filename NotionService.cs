@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Notion.Interfaces;
 using Notion.Models;
@@ -8,65 +10,88 @@ namespace Notion
 {
     public class NotionService : INotionService
     {
-        private const string BaseNotionUrl = "https://www.notion.so/";
         private readonly INotionRepository _notionRepository;
+        private readonly NotionCalendarOptions _options;
 
         public NotionService(INotionRepository notionRepository)
+            : this(notionRepository, new NotionCalendarOptions())
         {
-            _notionRepository = notionRepository;
         }
 
-        public async Task<string> GetVCalendarData()
+        public NotionService(INotionRepository notionRepository, NotionCalendarOptions options)
         {
-            var calendar = new VCalendar("Notion Tasks");
+            _notionRepository = notionRepository ?? throw new ArgumentNullException(nameof(notionRepository));
+            _options = options ?? new NotionCalendarOptions();
+        }
 
-            (await _notionRepository.GetTodoTasks()).ForEach(task =>
+        public async Task<string> GetVCalendarData(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var calendar = new VCalendar(_options.CalendarName);
+            var tasks = await _notionRepository.GetTodoTasks(cancellationToken);
+
+            foreach (var task in tasks)
+            {
+                var taskEvent = TryGetTaskEvent(task);
+                if (taskEvent != null)
                 {
-                    try
-                    {
-                        calendar.AddEvent(GetTaskEvent(task));
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                    calendar.AddEvent(taskEvent);
                 }
-            );
+            }
 
             return calendar.ToString();
         }
 
-
-        private VEvent GetTaskEvent(Result task)
+        private VEvent TryGetTaskEvent(Result task)
         {
-            var dateFormat = "yyyyMMddTHHmmssZ";
+            var dueDateValue = task?.Properties?.Due?.Date?.Start;
+            if (string.IsNullOrWhiteSpace(dueDateValue))
+            {
+                return null;
+            }
 
             var itemId = task.Id;
-            var itemUrl = $"{BaseNotionUrl}{itemId.Replace("-", "")}";
-            var dueDate = DateTime.Parse(task.Properties.Due.Date.Start);
-            var hasHours = dueDate.Hour > 0;
-            if (dueDate < DateTime.Now) dueDate = DateTime.Now.Date;
+            var itemUrl = new Uri(_options.PageBaseUrl, itemId.Replace("-", string.Empty)).ToString();
+            var hasTime = dueDateValue.Contains("T");
+            var dueDate = DateTime.Parse(dueDateValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+            var isOverdue = dueDate < DateTime.Now;
 
-            var start = hasHours
-                ? "DTSTART:" + dueDate.ToUniversalTime().ToString(dateFormat)
-                : $"DTSTART;VALUE=DATE:{dueDate:yyyyMMdd}";
-            var end = hasHours
-                ? "DTEND:" + dueDate.AddHours(1).ToUniversalTime().ToString(dateFormat)
-                : $"DTEND;VALUE=DATE:{dueDate.AddDays(1):yyyyMMdd}";
+            if (isOverdue)
+            {
+                dueDate = DateTime.Today;
+                hasTime = false;
+            }
+
+            var end = GetEndDate(task, dueDate, hasTime, isOverdue);
 
             var title =
-                $"{task.Properties.Priority.Formula.StringValue} {task.Properties.Name.Title.FirstOrDefault()?.Text.Content}";
+                $"{task.Properties?.Priority?.Formula?.StringValue} {task.Properties?.Name?.Title?.FirstOrDefault()?.Text?.Content}"
+                    .Trim();
 
             var description = $"Url: {itemUrl}";
 
             return new VEvent
             (
-                start,
+                itemId,
+                dueDate,
                 end,
+                hasTime,
                 title,
                 description,
                 itemUrl
             );
+        }
+
+        private static DateTime GetEndDate(Result task, DateTime start, bool hasTime, bool isOverdue)
+        {
+            var endDateValue = task?.Properties?.Due?.Date?.End;
+            if (!isOverdue && !string.IsNullOrWhiteSpace(endDateValue))
+            {
+                return DateTime.Parse(endDateValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+            }
+
+            return hasTime
+                ? start.AddHours(1)
+                : start.AddDays(1);
         }
     }
 }

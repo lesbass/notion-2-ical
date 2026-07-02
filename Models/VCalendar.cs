@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Notion.Models
@@ -23,11 +24,16 @@ namespace Notion.Models
             var sb = new StringBuilder();
             sb.Append("BEGIN:VCALENDAR");
             sb.Append("\r\nVERSION:2.0");
-            sb.Append($"\r\nNAME:{_name}");
-            sb.Append($"\r\nX-WR-CALNAM:{_name}");
+            sb.Append("\r\nPRODID:-//notion-2-ical//EN");
+            sb.Append("\r\nCALSCALE:GREGORIAN");
+            sb.Append($"\r\nNAME:{VEvent.EscapeText(_name)}");
+            sb.Append($"\r\nX-WR-CALNAME:{VEvent.EscapeText(_name)}");
             sb.Append("\r\nMETHOD:PUBLISH");
 
-            _events.ForEach(ev => sb.Append(ev.ToString(_name.GetHashCode().ToString())));
+            foreach (var vEvent in _events.OrderBy(ev => ev.Start))
+            {
+                sb.Append(vEvent.ToString(_name));
+            }
 
             sb.Append("\r\nEND:VCALENDAR");
 

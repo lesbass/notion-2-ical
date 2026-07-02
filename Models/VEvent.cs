@@ -5,33 +5,41 @@ namespace Notion.Models
 {
     public class VEvent
     {
-        private readonly string _description;
-        private readonly string _end;
-        private readonly string _itemUrl;
-        private readonly string _start;
-        private readonly string _title;
+        private const string DateTimeFormat = "yyyyMMddTHHmmssZ";
 
-        public VEvent(string start, string end, string title, string description, string itemUrl)
+        private readonly string _description;
+        private readonly DateTime _end;
+        private readonly bool _hasTime;
+        private readonly string _itemUrl;
+        private readonly DateTime _start;
+        private readonly string _title;
+        private readonly string _uid;
+
+        public VEvent(string uid, DateTime start, DateTime end, bool hasTime, string title, string description, string itemUrl)
         {
+            _uid = uid;
             _start = start;
             _end = end;
+            _hasTime = hasTime;
             _title = title;
             _description = description;
             _itemUrl = itemUrl;
         }
+
+        public DateTime Start => _start;
 
         public string ToString(string calendarId)
         {
             var sb = new StringBuilder();
 
             sb.Append("\r\nBEGIN:VEVENT");
-            sb.Append($"\r\n{_start}");
-            sb.Append($"\r\n{_end}");
-            sb.Append($"\r\nUID:{GetHashCode()}@{calendarId}");
+            AppendDate(sb, "DTSTART", _start, _hasTime);
+            AppendDate(sb, "DTEND", _end, _hasTime);
+            sb.Append($"\r\nUID:{EscapeText(_uid)}@{EscapeText(calendarId)}");
             sb.Append($"\r\nURL:{_itemUrl}");
-            sb.Append($"\r\nDTSTAMP:{DateTime.Now.ToUniversalTime():yyyyMMddTHHmmssZ}");
-            sb.Append($"\r\nSUMMARY:{_title}");
-            sb.Append($"\r\nDESCRIPTION:{_description}");
+            sb.Append($"\r\nDTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
+            sb.Append($"\r\nSUMMARY:{EscapeText(_title)}");
+            sb.Append($"\r\nDESCRIPTION:{EscapeText(_description)}");
             sb.Append("\r\nPRIORITY:5");
             sb.Append("\r\nCLASS:PUBLIC");
             sb.Append("\r\nEND:VEVENT");
@@ -39,17 +47,31 @@ namespace Notion.Models
             return sb.ToString();
         }
 
-        public override int GetHashCode()
+        public static string EscapeText(string value)
         {
-            unchecked
+            if (string.IsNullOrEmpty(value))
             {
-                var hashCode = _start != null ? _start.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ (_end != null ? _end.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (_itemUrl != null ? _itemUrl.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (_title != null ? _title.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (_description != null ? _description.GetHashCode() : 0);
-                return hashCode;
+                return string.Empty;
             }
+
+            return value
+                .Replace("\\", "\\\\")
+                .Replace(";", "\\;")
+                .Replace(",", "\\,")
+                .Replace("\r\n", "\\n")
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\n");
+        }
+
+        private static void AppendDate(StringBuilder sb, string name, DateTime value, bool hasTime)
+        {
+            if (hasTime)
+            {
+                sb.Append($"\r\n{name}:{value.ToUniversalTime().ToString(DateTimeFormat)}");
+                return;
+            }
+
+            sb.Append($"\r\n{name};VALUE=DATE:{value:yyyyMMdd}");
         }
     }
 }

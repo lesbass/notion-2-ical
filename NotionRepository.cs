@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,50 +13,127 @@ namespace Notion
 {
     public class NotionRepository : INotionRepository
     {
-        private const string BaseUrl = "https://api.notion.com";
-        private const string AccessToken = "";
-        private const string TaskDatabaseId = "";
         private readonly HttpClient _httpClient;
+        private readonly NotionCalendarOptions _options;
 
         public NotionRepository()
+            : this(new NotionCalendarOptions())
         {
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + AccessToken);
         }
 
-        public async Task<List<Result>> GetTodoTasks()
+        public NotionRepository(string accessToken, string databaseId)
+            : this(new NotionCalendarOptions
+            {
+                AccessToken = accessToken,
+                DatabaseId = databaseId
+            })
         {
-            var endpoint = $"{BaseUrl}/v1/databases/{TaskDatabaseId}/query";
-
-            var query = @"{
-    ""filter"": {
-        ""property"": ""Status"",
-        ""select"": {
-            ""does_not_equal"": ""Done 🙌""
         }
-    }
-}";
-            var startCursor = "";
+
+        public NotionRepository(NotionCalendarOptions options)
+            : this(new HttpClient(), options)
+        {
+        }
+
+        public NotionRepository(HttpClient httpClient, NotionCalendarOptions options)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _options = options ?? new NotionCalendarOptions();
+            ConfigureHttpClient();
+        }
+
+        public async Task<IReadOnlyList<Result>> GetTodoTasks(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            EnsureConfigured();
+
+            var endpoint = $"v1/databases/{_options.DatabaseId}/query";
+            string startCursor = null;
             var resultItems = new List<Result>();
+
             do
             {
-                var localEndpoint = endpoint;
                 if (!string.IsNullOrEmpty(startCursor))
                 {
-                    localEndpoint = $"{endpoint}?start_cursor={startCursor}";
-                    Thread.Sleep(500);
+                    await Task.Delay(_options.PageDelay, cancellationToken);
                 }
 
-                var response = _httpClient.PostAsync(localEndpoint,
-                    new StringContent(query, Encoding.UTF8, "application/json"));
-                var result =
-                    JsonConvert.DeserializeObject<QueryResponse>(await response.Result.Content.ReadAsStringAsync());
-                resultItems.AddRange(result.Results);
+                var query = BuildOpenTasksQuery(startCursor);
+                var response = await _httpClient.PostAsync(
+                    endpoint,
+                    new StringContent(query, Encoding.UTF8, "application/json"),
+                    cancellationToken);
 
-                startCursor = result.HasMore ? result.NextCursor : string.Empty;
+                response.EnsureSuccessStatusCode();
+
+                var result =
+                    JsonConvert.DeserializeObject<QueryResponse>(await response.Content.ReadAsStringAsync());
+
+                if (result?.Results != null)
+                {
+                    resultItems.AddRange(result.Results);
+                }
+
+                startCursor = result != null && result.HasMore ? result.NextCursor : null;
             } while (!string.IsNullOrEmpty(startCursor));
 
             return resultItems;
+        }
+
+        private string BuildOpenTasksQuery(string startCursor)
+        {
+            var query = new Dictionary<string, object>
+            {
+                ["page_size"] = _options.PageSize,
+                ["filter"] = new
+                {
+                    property = _options.StatusPropertyName,
+                    select = new
+                    {
+                        does_not_equal = _options.DoneStatus
+                    }
+                }
+            };
+
+            if (!string.IsNullOrEmpty(startCursor))
+            {
+                query["start_cursor"] = startCursor;
+            }
+
+            return JsonConvert.SerializeObject(query);
+        }
+
+        private void ConfigureHttpClient()
+        {
+            _httpClient.BaseAddress = _options.ApiBaseUrl;
+
+            if (!string.IsNullOrWhiteSpace(_options.AccessToken))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", _options.AccessToken);
+            }
+
+            if (!_httpClient.DefaultRequestHeaders.Contains("Notion-Version"))
+            {
+                _httpClient.DefaultRequestHeaders.Add("Notion-Version", _options.NotionVersion ?? "2022-06-28");
+            }
+        }
+
+        private void EnsureConfigured()
+        {
+            if (string.IsNullOrWhiteSpace(_options.AccessToken))
+            {
+                throw new InvalidOperationException("A Notion access token is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(_options.DatabaseId))
+            {
+                throw new InvalidOperationException("A Notion database id is required.");
+            }
+
+            if (_options.PageSize < 1 || _options.PageSize > 100)
+            {
+                throw new InvalidOperationException("Notion page size must be between 1 and 100.");
+            }
         }
     }
 }

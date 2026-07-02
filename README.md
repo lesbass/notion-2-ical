@@ -4,6 +4,8 @@
 
 .NET 10 library that turns a Notion task database into an iCalendar feed.
 
+NuGet package: https://www.nuget.org/packages/Notion2Ical/
+
 The feed can be exposed by an ASP.NET application and subscribed from calendar
 apps such as Google Calendar, Outlook, Apple Calendar, or any client that reads
 `.ics` feeds.
